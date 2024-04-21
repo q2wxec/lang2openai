@@ -5,11 +5,20 @@ import json
 import time
 import uuid
 import asyncio
+import os
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain.llms.base import LLM
 from langchain_core.messages import HumanMessage, SystemMessage,AIMessage
 
 from utils.general_utils import *
+
+def get_function_prompt(question,functions)->str:
+    BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir)))
+    with open(BASE_DIR+'/prompt/function_call.prompt', 'r',encoding='utf-8') as f:
+        function_prompt = f.read()
+    # 替换function_prompt中的{question}和{functions}
+    result = function_prompt.replace("{question}", question).replace("{functions}", functions)
+    return result
 
 def get_llm_dict()->dict:
     from langchain_community.llms.tongyi import Tongyi
@@ -36,6 +45,9 @@ async def chat(req: request):
     stream = safe_get(req, 'stream', False)
     model = safe_get(req, 'model')
     messages = safe_get(req, 'messages', [])
+    tools = safe_get(req, 'tools', [])
+    # tools不为空，说明是工具调用
+    is_function_call = (tools != [])
     if model is None or model not in models:
         model = "qwen-max"
     chat : BaseChatModel = models[model]
@@ -48,6 +60,14 @@ async def chat(req: request):
         elif message['role'] == 'assistant':
             chat_message = AIMessage(content=message['content'])
         chat_messages.append(chat_message)
+    if is_function_call:
+        stream = False
+        question = chat_messages.pop().content
+        # 将tools转化为str
+        functions = json.dumps(tools)
+        function_prompt = get_function_prompt(question,functions)
+        chat_message = HumanMessage(content=function_prompt)
+        chat_messages.append(chat_message)
     resp = {
             "id": uuid.uuid4().hex,
             "object": "chat.completion",
@@ -59,6 +79,7 @@ async def chat(req: request):
                 "message": {
                 "role": "assistant",
                 "content": "",
+                "tool_calls":"",
                 },
                 "logprobs": '',
                 "finish_reason": "stop"
@@ -116,11 +137,20 @@ async def chat(req: request):
         return ResponseStream(generate_answer, content_type='text/event-stream')
     else:
         content = chat.invoke(chat_messages).content
-        resp["choices"][0]['message']['content'] = content
         completion_tokens = cal_tokens(content, 'gpt-3.5-turbo')
         resp["usage"]["prompt_tokens"]= prompt_tokens
         resp["usage"]["completion_tokens"]= completion_tokens
         resp["usage"]["total_tokens"]= completion_tokens+prompt_tokens
+        if is_function_call:
+            resp["choices"][0]['message']['tool_calls'] = [
+                    {
+                        "id": uuid.uuid4().hex,
+                        "type": "function",
+                        "function": json.loads(content)
+                    }
+                ]
+        else:
+           resp["choices"][0]['message']['content'] = content 
         return sanic_json(resp)
 
 

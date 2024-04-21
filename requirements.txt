@@ -1,7 +1,7 @@
 # langchain
-langchain==0.1.10
-langchain-core==0.1.28
-langchain-community==0.0.25
+langchain==0.1.16
+langchain-core==0.1.44
+langchain-community==0.0.33
 
 
 # embedding
