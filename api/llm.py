@@ -8,7 +8,8 @@ import asyncio
 import os
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain.llms.base import LLM
-from langchain_core.messages import HumanMessage, SystemMessage,AIMessage
+from langchain_core.messages import HumanMessage, SystemMessage,AIMessage,ToolMessage
+from langchain_core.messages.tool import ToolCall
 
 from utils.general_utils import *
 
@@ -46,19 +47,34 @@ async def chat(req: request):
     model = safe_get(req, 'model')
     messages = safe_get(req, 'messages', [])
     tools = safe_get(req, 'tools', [])
+    print('messages:'+str(messages))
+    print('tools:'+str(tools))
     # tools不为空，说明是工具调用
-    is_function_call = (tools != [])
+    is_function_call = (tools != [] and messages[-1]['role'] == 'user')
     if model is None or model not in models:
         model = "qwen-max"
     chat : BaseChatModel = models[model]
     chat_messages = []
     for message in messages:
+        if message['content'] is None:
+            message['content']=''
         if message['role'] == 'system':
             chat_message = SystemMessage(content=message['content'])
         elif message['role'] == 'user':
             chat_message = HumanMessage(content=message['content'])
         elif message['role'] == 'assistant':
-            chat_message = AIMessage(content=message['content'])
+            if message['tool_calls'] and len(message['tool_calls']) > 0:
+                # tool_calls = []
+                # for tool_call in message['tool_calls']:
+                #     tc = ToolCall(name=tool_call['function']['name'],args=json.loads(tool_call['function']['arguments']),id = tool_call['id'])
+                #     tool_calls.append(tc)
+                # chat_message = AIMessage(content=message['content'],tool_calls=tool_calls)
+                chat_message = AIMessage(content=message['content']+'/n工具调用情况如下：'+str(message['tool_calls']))
+            else :  
+                chat_message = AIMessage(content=message['content'])  
+        elif message['role'] == 'tool':
+            # chat_message = ToolMessage(content=message['content'],tool_call_id = message['tool_calls'])
+            chat_message = AIMessage(content='工具调用结果如下，tool_call_id：'+message['tool_call_id']+' ,调用结果result:'+message['content'])
         chat_messages.append(chat_message)
     if is_function_call:
         stream = False
@@ -142,15 +158,19 @@ async def chat(req: request):
         resp["usage"]["completion_tokens"]= completion_tokens
         resp["usage"]["total_tokens"]= completion_tokens+prompt_tokens
         if is_function_call:
-            resp["choices"][0]['message']['tool_calls'] = [
-                    {
+            tool_calls = []
+            tool_array = json.loads(content)
+            for tool in tool_array:
+                tool_resp = {
                         "id": uuid.uuid4().hex,
                         "type": "function",
-                        "function": json.loads(content)
+                        "function": tool
                     }
-                ]
+                tool_calls.append(tool_resp)
+            resp["choices"][0]['message']['tool_calls'] = tool_calls
         else:
            resp["choices"][0]['message']['content'] = content 
+        print('resp:'+str(resp))
         return sanic_json(resp)
 
 

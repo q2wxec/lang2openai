@@ -8,11 +8,18 @@
 {functions}
 
 # output format
-你需要使用 JSON 格式输出，其中包含函数名和调用参数，具体格式如下
-{
-    "name": "get_current_weather",
-    "arguments": "{\n\"location\": \"Boston, MA\"\n}"
-}
+你需要使用 JSONArray 格式输出，其中的每一个元素都包含函数名和调用参数，涉及到多少个方法的调用就输出多少个子对象
 
 # constrants
-输出除了JSON 格式的函数名和参数外，不要输出任何其他内容
+输出的子对象除了JSON格式只允许包含"name","arguments"两个key，不要输出任何其他内容，具体格式如下
+
+[
+    {
+        "name": "get_current_weather",
+        "arguments": "{\"location\": \"Boston, MA\"}"
+    },
+    {
+        "name": "get_current_country",
+        "arguments": "{\"location\": \"Boston, MA\"}"
+    }
+]
