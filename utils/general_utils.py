@@ -10,7 +10,7 @@ import re
 import configparser
 
 
-__all__ = ['write_check_file', 'isURL', 'format_source_documents', 'get_time', 'safe_get', 'truncate_filename', 'read_files_with_extensions', 'validate_user_id', 'get_invalid_user_id_msg','cal_tokens','get_config']
+__all__ = ['write_check_file', 'isURL', 'format_source_documents', 'get_time', 'safe_get', 'truncate_filename', 'read_files_with_extensions', 'validate_user_id', 'get_invalid_user_id_msg','cal_tokens','get_config','is_valid_json_array']
 
 def get_invalid_user_id_msg(user_id):
     return "fail, Invalid user_id: {}. user_id 必须只含有字母，数字和下划线且字母开头".format(user_id)
@@ -150,4 +150,28 @@ def get_config(section, option, fallback=''):
     config = configparser.ConfigParser()
     config.read(os.path.join(BASE_DIR,'config.ini'))
     return config.get(section, option, fallback=fallback)
-    
+
+import json
+
+def is_valid_json_array(json_string):
+    """
+    判断给定的字符串是否是一个有效的JSON数组。
+
+    参数:
+        json_string (str): 待验证的字符串。
+
+    返回:
+        bool: 如果字符串是有效的JSON数组，返回True；否则返回False。
+    """
+    try:
+        # 尝试解析字符串为JSON
+        data = json.loads(json_string)
+        
+        # 检查解析结果是否为列表
+        if isinstance(data, list):
+            return True
+        else:
+            return False
+    except json.JSONDecodeError:
+        # 解析失败，说明不是有效的JSON
+        return False

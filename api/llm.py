@@ -6,6 +6,7 @@ import time
 import uuid
 import asyncio
 import os
+import re
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain.llms.base import LLM
 from langchain_core.messages import HumanMessage, SystemMessage,AIMessage,ToolMessage
@@ -27,9 +28,9 @@ def get_llm_dict()->dict:
     from langchain_community.llms.sparkllm import SparkLLM
     result = {}
     if get_config('llm','ty_api_key'):
-        result['qwen-max'] = Tongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max'),
+        result['qwen-max'] = Tongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max')
     if get_config('llm','qf_ak'):
-        result['ERNIE-4.0'] = QianfanLLMEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-4.0'),
+        result['ERNIE-Bot-4'] = QianfanLLMEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-Bot-4')
     if get_config('llm','xh_app_id'):
         result['spark-3.1'] = SparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain="generalv3",spark_api_url="ws://spark-api.xf-yun.com/v3.1/chat")
     return result
@@ -40,9 +41,9 @@ def get_chat_dict()->dict:
     from langchain_community.chat_models import ChatSparkLLM
     result = {}
     if get_config('llm','ty_api_key'):
-        result['qwen-max'] = ChatTongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max'),
+        result['qwen-max'] = ChatTongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max')
     if get_config('llm','qf_ak'):
-        result['ERNIE-4.0'] = QianfanChatEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-4.0'),
+        result['ERNIE-Bot-4'] = QianfanChatEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-Bot-4')
     if get_config('llm','xh_app_id'):
         result['spark-3.1'] = ChatSparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain="generalv3",spark_api_url="ws://spark-api.xf-yun.com/v3.1/chat")
     return result
@@ -165,7 +166,14 @@ async def chat(req: request):
         resp["usage"]["total_tokens"]= completion_tokens+prompt_tokens
         if is_function_call:
             tool_calls = []
-            tool_array = json.loads(content)
+            if is_valid_json_array(content):
+                tool_array = json.loads(content)
+            else:
+                match = re.search(r'\[.*\]', content)
+                if match:
+                    tool_array = json.loads(match.group(0))
+                else:
+                    raise Exception('函数调用结果格式错误，请检查')
             for tool in tool_array:
                 tool_resp = {
                         "id": uuid.uuid4().hex,
