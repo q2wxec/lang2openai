@@ -53,8 +53,8 @@ async def chat(req: request):
     model = safe_get(req, 'model')
     messages = safe_get(req, 'messages', [])
     tools = safe_get(req, 'tools', [])
-    print('messages:'+str(messages))
-    print('tools:'+str(tools))
+    #print('messages:'+str(messages))
+    #print('tools:'+str(tools))
     # tools不为空，说明是工具调用
     is_function_call = (tools != [] and messages[-1]['role'] == 'user')
     if model is None or model not in models:
@@ -176,7 +176,7 @@ async def chat(req: request):
             resp["choices"][0]['message']['tool_calls'] = tool_calls
         else:
            resp["choices"][0]['message']['content'] = content 
-        print('resp:'+str(resp))
+        #print('resp:'+str(resp))
         return sanic_json(resp)
 
 
