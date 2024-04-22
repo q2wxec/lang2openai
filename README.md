@@ -11,7 +11,11 @@
 - 可进化，因为本项目最终是基于LangChain标准化来实现外部接口调用的，因而一切LangChain自身或厂商适配过的模型，本项目都支持，而作为大语言模型应用开发的当红炸子鸡框架，我相信，其支持的模型调用必然会越来约多。目前已支持的见此链接[Chat models | 🦜️🔗 LangChain](https://python.langchain.com/docs/integrations/chat/?ref=blog.langchain.dev)
 - function calling，考虑到越来越多的agents以及工具调用的需求产生，本项目特意基于提示词工程的方式实现了openai-api的function calling适配，目前以spark-3.1作为底层模型进行测试，效果良好。
 
-### 3.接口一览
+### 3.怎么用
+
+详见[lang2openai/DEPLOY.md](https://github.com/q2wxec/lang2openai/blob/master/DEPLOY.md)
+
+### 4.接口一览
 
 - /v1/completions
 
