@@ -6,9 +6,10 @@ from utils.general_utils import *
 
 def get_rerank_dict()->dict:
     from FlagEmbedding import FlagReranker
-    return {
-        "bge-reranker-large": FlagReranker(model_name_or_path=get_config('rerank','bge_reranker_path'), use_fp16=True),
-    }
+    result = {}
+    if get_config('rerank','bge_reranker_path'):
+        result['bge-reranker-large'] = FlagReranker(model_name_or_path=get_config('rerank','bge_reranker_path'), use_fp16=True)
+    return result
 
 async def rerank(req: request):
     models = req.app.ctx.reranke_models

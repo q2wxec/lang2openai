@@ -25,21 +25,27 @@ def get_llm_dict()->dict:
     from langchain_community.llms.tongyi import Tongyi
     from langchain_community.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
     from langchain_community.llms.sparkllm import SparkLLM
-    return {
-        "qwen-max": Tongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max'),
-        "ERNIE-4.0":QianfanLLMEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-4.0-8K'),
-        "spark-3.1":SparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain="generalv3",spark_api_url="ws://spark-api.xf-yun.com/v3.1/chat")
-    }
+    result = {}
+    if get_config('llm','ty_api_key'):
+        result['qwen-max'] = Tongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max'),
+    if get_config('llm','qf_ak'):
+        result['ERNIE-4.0'] = QianfanLLMEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-4.0'),
+    if get_config('llm','xh_app_id'):
+        result['spark-3.1'] = SparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain="generalv3",spark_api_url="ws://spark-api.xf-yun.com/v3.1/chat")
+    return result
 
 def get_chat_dict()->dict:
     from langchain_community.chat_models import ChatTongyi
     from langchain_community.chat_models import QianfanChatEndpoint
     from langchain_community.chat_models import ChatSparkLLM
-    return {
-        "qwen-max": ChatTongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max'),
-        "ERNIE-4.0":QianfanChatEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-4.0-8K'),
-        "spark-3.1":ChatSparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain="generalv3",spark_api_url="ws://spark-api.xf-yun.com/v3.1/chat")
-    }
+    result = {}
+    if get_config('llm','ty_api_key'):
+        result['qwen-max'] = ChatTongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max'),
+    if get_config('llm','qf_ak'):
+        result['ERNIE-4.0'] = QianfanChatEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-4.0'),
+    if get_config('llm','xh_app_id'):
+        result['spark-3.1'] = ChatSparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain="generalv3",spark_api_url="ws://spark-api.xf-yun.com/v3.1/chat")
+    return result
 
 async def chat(req: request):
     models = req.app.ctx.chat_models

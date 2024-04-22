@@ -145,7 +145,7 @@ def cal_tokens(inputs,model):
         num_tokens += len(encoding.encode(text))
     return num_tokens
 
-def get_config(section, option, fallback=object()):
+def get_config(section, option, fallback=''):
     BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir)))
     config = configparser.ConfigParser()
     config.read(os.path.join(BASE_DIR,'config.ini'))

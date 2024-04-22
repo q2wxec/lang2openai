@@ -6,9 +6,10 @@ from utils.general_utils import *
 
 def get_embeddings_dict()->dict:
     from langchain.embeddings.huggingface import HuggingFaceBgeEmbeddings
-    return {
-        "bge-large-zh-v1.5": HuggingFaceBgeEmbeddings(model_name=get_config('embedding','bge_embedding_path')),
-    }
+    result = {}
+    if get_config('embedding','bge_embedding_path'):
+        result["bge-large-zh-v1.5"] = HuggingFaceBgeEmbeddings(model_name=get_config('embedding','bge_embedding_path'))
+    return result
 async def embeddings(req: request):
     models = req.app.ctx.embedding_models
     input = safe_get(req, 'input', [])
