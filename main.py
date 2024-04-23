@@ -6,13 +6,13 @@ langchain_patch.mk()
 # 获取当前脚本的绝对路径
 current_script_path = os.path.abspath(__file__)
 
-# 获取当前脚本的父目录的路径，即`qanything_server`目录
+# 获取当前脚本的父目录的路径，
 current_dir = os.path.dirname(current_script_path)
 
-# 获取`qanything_server`目录的父目录，即`qanything_kernel`
+# 获取`qanything_server`目录的父目录，
 parent_dir = os.path.dirname(current_dir)
 
-# 获取根目录：`qanything_kernel`的父目录
+# 获取根目录：
 root_dir = os.path.dirname(parent_dir)
 
 # 将项目根目录添加到sys.path
