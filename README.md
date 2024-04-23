@@ -324,4 +324,10 @@
   }
   ```
 
-  
+
+### LangChain用法
+
+```
+gpt35 = ChatOpenAI(model="spark-3.1",  temperature=0,openai_api_base="http://localhost:8778/v1",openai_api_key="123").bind_tools(tools)
+```
+
