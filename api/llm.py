@@ -58,8 +58,12 @@ async def chat(req: request):
     #print('tools:'+str(tools))
     # tools不为空，说明是工具调用
     is_function_call = (tools != [] and messages[-1]['role'] == 'user')
+    
     if model is None or model not in models:
-        model = "qwen-max"
+        model = "spark-3.1"
+    # spark-3.1最新消息必须来自用户
+    if model == "spark-3.1" and messages[-1]['role'] != 'user' :
+        messages[-1]['role'] = 'user'
     chat : BaseChatModel = models[model]
     chat_messages = []
     for message in messages:
@@ -194,7 +198,7 @@ async def completions(req: request):
     stream = safe_get(req, 'stream', False)
     model = safe_get(req, 'model')
     if model is None or model not in models:
-        model = "qwen-max"
+        model = "spark-3.1"
     llm : LLM = models[model]
     resp = {
             "choices": [
