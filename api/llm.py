@@ -35,7 +35,7 @@ def get_llm_dict()->dict:
     if get_config('llm','xh_app_id'):
         result['spark-3.1'] = SparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain="generalv3",spark_api_url="ws://spark-api.xf-yun.com/v3.1/chat")
     if get_config('llm','zhipu_key'):
-        result['glm-4'] = Chat2LLM(chat = ChatZhipuAI(zhipuai_api_key=get_config('llm','zhipu_key'),model_name='glm-4',temperature=0.5))
+        result['glm-4'] = Chat2LLM(chat = ChatZhipuAI(zhipuai_api_key=get_config('llm','zhipu_key'),model_name='glm-4'))
     return result
 
 def get_chat_dict()->dict:
@@ -53,8 +53,10 @@ def get_chat_dict()->dict:
 
 async def chat(req: request):
     models = req.app.ctx.chat_models
-    stream = safe_get(req, 'stream', False)
     model = safe_get(req, 'model')
+    if model == "glm-4" :
+        return glm_chat(req)
+    stream = safe_get(req, 'stream', False)
     messages = safe_get(req, 'messages', [])
     tools = safe_get(req, 'tools', [])
     temperature = safe_get(req, 'temperature', 0)
@@ -62,8 +64,6 @@ async def chat(req: request):
     #print('tools:'+str(tools))
     # tools不为空，说明是工具调用
     is_function_call = (tools != [] and messages[-1]['role'] == 'user')
-    if model == "glm-4" :
-        return glm_chat(req)
     
     if model is None or model not in models:
         model = "spark-3.1"
