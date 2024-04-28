@@ -4,6 +4,7 @@ from langchain_core.outputs import  GenerationChunk
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import HumanMessage
 
 
 class Chat2LLM(LLM):
@@ -24,7 +25,8 @@ class Chat2LLM(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        return self.chat.invoke(prompt).content
+        chat_message = HumanMessage(content=prompt)
+        return self.chat.invoke([chat_message]).content
 
                 
     def _stream(
@@ -34,7 +36,8 @@ class Chat2LLM(LLM):
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> Iterator[GenerationChunk]:
-                resp = self.chat.stream(prompt)
+                chat_message = HumanMessage(content=prompt)
+                resp = self.chat.stream([chat_message])
                 for part in resp:
                     chunk = GenerationChunk(text=part.content)
                     yield chunk

@@ -9,9 +9,9 @@ import os
 import re
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain.llms.base import LLM
-from langchain_core.messages import HumanMessage, SystemMessage,AIMessage,ToolMessage
-from langchain_core.messages.tool import ToolCall
-
+from langchain_core.messages import HumanMessage, SystemMessage,AIMessage
+from llm.adaptor.chat2llm import Chat2LLM
+from collections.abc import  Iterator
 from utils.general_utils import *
 
 def get_function_prompt(question,functions)->str:
@@ -26,6 +26,7 @@ def get_llm_dict()->dict:
     from langchain_community.llms.tongyi import Tongyi
     from langchain_community.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
     from langchain_community.llms.sparkllm import SparkLLM
+    from langchain_community.chat_models import ChatZhipuAI
     result = {}
     if get_config('llm','ty_api_key'):
         result['qwen-max'] = Tongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max')
@@ -33,6 +34,8 @@ def get_llm_dict()->dict:
         result['ERNIE-Bot-4'] = QianfanLLMEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-Bot-4')
     if get_config('llm','xh_app_id'):
         result['spark-3.1'] = SparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain="generalv3",spark_api_url="ws://spark-api.xf-yun.com/v3.1/chat")
+    if get_config('llm','zhipu_key'):
+        result['glm-4'] = Chat2LLM(chat = ChatZhipuAI(zhipuai_api_key=get_config('llm','zhipu_key'),model_name='glm-4',temperature=0.5))
     return result
 
 def get_chat_dict()->dict:
@@ -54,10 +57,13 @@ async def chat(req: request):
     model = safe_get(req, 'model')
     messages = safe_get(req, 'messages', [])
     tools = safe_get(req, 'tools', [])
+    temperature = safe_get(req, 'temperature', 0)
     #print('messages:'+str(messages))
     #print('tools:'+str(tools))
     # tools不为空，说明是工具调用
     is_function_call = (tools != [] and messages[-1]['role'] == 'user')
+    if model == "glm-4" :
+        return glm_chat(req)
     
     if model is None or model not in models:
         model = "spark-3.1"
@@ -269,3 +275,36 @@ async def completions(req: request):
         resp["usage"]["completion_tokens"]= completion_tokens
         resp["usage"]["total_tokens"]= completion_tokens+prompt_tokens
         return sanic_json(resp)
+    
+    
+def glm_chat(req: request):
+    from zhipuai import ZhipuAI
+    stream = safe_get(req, 'stream', False)
+    model = safe_get(req, 'model')
+    messages = safe_get(req, 'messages', [])
+    tools = safe_get(req, 'tools', [])
+    tool_choice = safe_get(req, 'tool_choice', '')
+    temperature = safe_get(req, 'temperature', 0)
+    client = ZhipuAI(api_key=get_config('llm','zhipu_key')) # 填写您自己的APIKey
+    resp = client.chat.completions.create(
+        model=model,  # 填写需要调用的模型名称
+        messages=messages,
+        tools = tools,
+        stream=stream,
+        tool_choice=tool_choice,
+        temperature=temperature)
+    if not stream:
+        return sanic_json(json.loads(resp.model_dump_json()))
+    else:
+        async def generate_answer(response:ResponseStream):
+            for chunk in resp:
+                
+                #logger.info(resp)
+                await response.write(f"data: {json.loads(chunk.model_dump_json())}\n\n")
+                # 确保流式输出不被压缩
+                await asyncio.sleep(0.001)
+            await response.write(f"data: {json.loads(chunk.model_dump_json())}\n\n")
+                # 确保流式输出不被压缩
+            await asyncio.sleep(0.001)
+        return ResponseStream(generate_answer, content_type='text/event-stream')
+    
