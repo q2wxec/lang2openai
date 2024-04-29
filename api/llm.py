@@ -10,9 +10,9 @@ import re
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain.llms.base import LLM
 from langchain_core.messages import HumanMessage, SystemMessage,AIMessage
-from llm.adaptor.chat2llm import Chat2LLM
-from collections.abc import  Iterator
+# from llm.adaptor.chat2llm import Chat2LLM
 from utils.general_utils import *
+from llm.llm_loader import getLLM,getChat
 
 def get_function_prompt(question,functions)->str:
     BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir)))
@@ -22,55 +22,52 @@ def get_function_prompt(question,functions)->str:
     result = function_prompt.replace("{question}", question).replace("{functions}", functions)
     return result
 
-def get_llm_dict()->dict:
-    from langchain_community.llms.tongyi import Tongyi
-    from langchain_community.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
-    from langchain_community.llms.sparkllm import SparkLLM
-    from langchain_community.chat_models import ChatZhipuAI
-    result = {}
-    if get_config('llm','ty_api_key'):
-        result['qwen-max'] = Tongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max')
-    if get_config('llm','qf_ak'):
-        result['ERNIE-Bot-4'] = QianfanLLMEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-Bot-4')
-    if get_config('llm','xh_app_id'):
-        result['spark-3.1'] = SparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain="generalv3",spark_api_url="ws://spark-api.xf-yun.com/v3.1/chat")
-    if get_config('llm','zhipu_key'):
-        result['glm-4'] = Chat2LLM(chat = ChatZhipuAI(zhipuai_api_key=get_config('llm','zhipu_key'),model_name='glm-4'))
-    return result
+# def get_llm_dict()->dict:
+#     from langchain_community.llms.tongyi import Tongyi
+#     from langchain_community.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
+#     from langchain_community.llms.sparkllm import SparkLLM
+#     from langchain_community.chat_models import ChatZhipuAI
+#     result = {}
+#     if get_config('llm','ty_api_key'):
+#         result['qwen-max'] = Tongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max')
+#     if get_config('llm','qf_ak'):
+#         result['ERNIE-Bot-4'] = QianfanLLMEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-Bot-4')
+#     if get_config('llm','xh_app_id'):
+#         result['spark-3.1'] = SparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain="generalv3",spark_api_url="ws://spark-api.xf-yun.com/v3.1/chat")
+#     if get_config('llm','zhipu_key'):
+#         result['glm-4'] = Chat2LLM(chat = ChatZhipuAI(zhipuai_api_key=get_config('llm','zhipu_key'),model_name='glm-4'))
+#     return result
 
-def get_chat_dict()->dict:
-    from langchain_community.chat_models import ChatTongyi
-    from langchain_community.chat_models import QianfanChatEndpoint
-    from langchain_community.chat_models import ChatSparkLLM
-    result = {}
-    if get_config('llm','ty_api_key'):
-        result['qwen-max'] = ChatTongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max')
-    if get_config('llm','qf_ak'):
-        result['ERNIE-Bot-4'] = QianfanChatEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-Bot-4')
-    if get_config('llm','xh_app_id'):
-        result['spark-3.1'] = ChatSparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain="generalv3",spark_api_url="ws://spark-api.xf-yun.com/v3.1/chat")
-    return result
+# def get_chat_dict()->dict:
+#     from langchain_community.chat_models import ChatTongyi
+#     from langchain_community.chat_models import QianfanChatEndpoint
+#     from langchain_community.chat_models import ChatSparkLLM
+#     result = {}
+#     if get_config('llm','ty_api_key'):
+#         result['qwen-max'] = ChatTongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max')
+#     if get_config('llm','qf_ak'):
+#         result['ERNIE-Bot-4'] = QianfanChatEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-Bot-4')
+#     if get_config('llm','xh_app_id'):
+#         result['spark-3.1'] = ChatSparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain="generalv3",spark_api_url="ws://spark-api.xf-yun.com/v3.1/chat")
+#     return result
 
 async def chat(req: request):
-    models = req.app.ctx.chat_models
+    # models = req.app.ctx.chat_models
     model = safe_get(req, 'model')
     if model == "glm-4" :
         return glm_chat(req)
     stream = safe_get(req, 'stream', False)
     messages = safe_get(req, 'messages', [])
     tools = safe_get(req, 'tools', [])
-    temperature = safe_get(req, 'temperature', 0)
+    temperature = safe_get(req, 'temperature', 0.1)
     #print('messages:'+str(messages))
     #print('tools:'+str(tools))
     # tools不为空，说明是工具调用
     is_function_call = (tools != [] and messages[-1]['role'] == 'user')
-    
-    if model is None or model not in models:
-        model = "spark-3.1"
     # spark-3.1最新消息必须来自用户
     if model == "spark-3.1" and messages[-1]['role'] != 'user' :
         messages[-1]['role'] = 'user'
-    chat : BaseChatModel = models[model]
+    chat : BaseChatModel = getChat(model,temperature)
     chat_messages = []
     for message in messages:
         if message['content'] is None:
@@ -199,13 +196,12 @@ async def chat(req: request):
 
 
 async def completions(req: request):
-    models = req.app.ctx.llm_models
+    # models = req.app.ctx.llm_models
     prompt = safe_get(req, 'prompt')
     stream = safe_get(req, 'stream', False)
     model = safe_get(req, 'model')
-    if model is None or model not in models:
-        model = "spark-3.1"
-    llm : LLM = models[model]
+    temperature = safe_get(req, 'temperature', 0.1)
+    llm : LLM = getLLM(model, temperature)
     resp = {
             "choices": [
                 {

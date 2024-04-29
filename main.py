@@ -69,13 +69,13 @@ async def handle_options_request(request):
 
 @app.before_server_start
 async def init_modal(app, loop):
-    from api.llm import get_llm_dict,get_chat_dict
+    # from api.llm import get_llm_dict,get_chat_dict
     from api.rerank import get_rerank_dict
     from api.embedding import get_embeddings_dict
     app.ctx.embedding_models = get_embeddings_dict()
     app.ctx.reranke_models = get_rerank_dict()
-    app.ctx.llm_models = get_llm_dict()
-    app.ctx.chat_models = get_chat_dict()
+    # app.ctx.llm_models = get_llm_dict()
+    # app.ctx.chat_models = get_chat_dict()
 
 
 
