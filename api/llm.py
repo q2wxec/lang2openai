@@ -2,17 +2,17 @@ from sanic.response import json as sanic_json
 from sanic.response import ResponseStream
 from sanic import request
 import json
-import time
-import uuid
+
 import asyncio
 import os
-import re
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain.llms.base import LLM
 from langchain_core.messages import HumanMessage, SystemMessage,AIMessage
 # from llm.adaptor.chat2llm import Chat2LLM
 from utils.general_utils import *
 from llm.llm_loader import getLLM,getChat
+from modal.openai_api_modal import *
+from direct.direct_request import pre_router
 
 def get_function_prompt(question,functions)->str:
     BASE_DIR = os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir)))
@@ -22,52 +22,29 @@ def get_function_prompt(question,functions)->str:
     result = function_prompt.replace("{question}", question).replace("{functions}", functions)
     return result
 
-# def get_llm_dict()->dict:
-#     from langchain_community.llms.tongyi import Tongyi
-#     from langchain_community.llms.baidu_qianfan_endpoint import QianfanLLMEndpoint
-#     from langchain_community.llms.sparkllm import SparkLLM
-#     from langchain_community.chat_models import ChatZhipuAI
-#     result = {}
-#     if get_config('llm','ty_api_key'):
-#         result['qwen-max'] = Tongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max')
-#     if get_config('llm','qf_ak'):
-#         result['ERNIE-Bot-4'] = QianfanLLMEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-Bot-4')
-#     if get_config('llm','xh_app_id'):
-#         result['spark-3.1'] = SparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain="generalv3",spark_api_url="ws://spark-api.xf-yun.com/v3.1/chat")
-#     if get_config('llm','zhipu_key'):
-#         result['glm-4'] = Chat2LLM(chat = ChatZhipuAI(zhipuai_api_key=get_config('llm','zhipu_key'),model_name='glm-4'))
-#     return result
-
-# def get_chat_dict()->dict:
-#     from langchain_community.chat_models import ChatTongyi
-#     from langchain_community.chat_models import QianfanChatEndpoint
-#     from langchain_community.chat_models import ChatSparkLLM
-#     result = {}
-#     if get_config('llm','ty_api_key'):
-#         result['qwen-max'] = ChatTongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name='qwen-max')
-#     if get_config('llm','qf_ak'):
-#         result['ERNIE-Bot-4'] = QianfanChatEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model='ERNIE-Bot-4')
-#     if get_config('llm','xh_app_id'):
-#         result['spark-3.1'] = ChatSparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain="generalv3",spark_api_url="ws://spark-api.xf-yun.com/v3.1/chat")
-#     return result
 
 async def chat(req: request):
     # models = req.app.ctx.chat_models
     model = safe_get(req, 'model')
-    if model == "glm-4" :
-        return glm_chat(req)
+    # glm接口与openai兼容，可以直接处理返回
+    resp = pre_router(req)
+    if resp:
+        return resp
     stream = safe_get(req, 'stream', False)
     messages = safe_get(req, 'messages', [])
     tools = safe_get(req, 'tools', [])
-    temperature = safe_get(req, 'temperature', 0.1)
+    temperature = safe_get(req, 'temperature', 0.01)
     #print('messages:'+str(messages))
     #print('tools:'+str(tools))
-    # tools不为空，说明是工具调用
-    is_function_call = (tools != [] and messages[-1]['role'] == 'user')
+    
     # spark-3.1最新消息必须来自用户
     if model == "spark-3.1" and messages[-1]['role'] != 'user' :
         messages[-1]['role'] = 'user'
     chat : BaseChatModel = getChat(model,temperature)
+    # tools不为空，说明是工具调用
+    is_function_call = (tools and messages[-1]['role'] == 'user')
+    # if is_function_call:
+    #     return function_call(req,chat)
     chat_messages = []
     for message in messages:
         if message['content'] is None:
@@ -90,62 +67,10 @@ async def chat(req: request):
             # chat_message = ToolMessage(content=message['content'],tool_call_id = message['tool_calls'])
             chat_message = AIMessage(content='工具调用结果如下，tool_call_id：'+message['tool_call_id']+' ,调用结果result:'+message['content'])
         chat_messages.append(chat_message)
-    if is_function_call:
-        stream = False
-        question = chat_messages.pop().content
-        # 将tools转化为str
-        functions = json.dumps(tools)
-        function_prompt = get_function_prompt(question,functions)
-        chat_message = HumanMessage(content=function_prompt)
-        chat_messages.append(chat_message)
-    resp = {
-            "id": uuid.uuid4().hex,
-            "object": "chat.completion",
-            "created": time.time(),
-            "model": model,
-            "system_fingerprint": "",
-            "choices": [{
-                "index": 0,
-                "message": {
-                "role": "assistant",
-                "content": "",
-                "tool_calls":"",
-                },
-                "logprobs": '',
-                "finish_reason": "stop"
-            }],
-            "usage": {
-                "prompt_tokens": 0,
-                "completion_tokens": 0,
-                "total_tokens": 0
-            }
-        }
     
-    stream_resp = {
-                    "id": uuid.uuid4().hex,
-                    "object": "chat.completion.chunk",
-                    "created": time.time(),
-                    "model": model,
-                    "system_fingerprint": "",
-                    "choices": [
-                        {
-                            "index": 0,
-                            "delta": {
-                                "role": "assistant",
-                                "content": ""
-                            },
-                            "logprobs": '',
-                            "finish_reason": ""
-                        }
-                    ],
-                    "usage": {
-                        "completion_tokens": 0,
-                        "prompt_tokens": 0,
-                        "total_tokens": 0
-                    }
-                }
     prompt_tokens = sum(cal_tokens(s['content'], 'gpt-3.5-turbo') for s in messages)
     if stream:
+        stream_resp = get_chat_stream_resp(model)
         async def generate_answer(response:ResponseStream):
             completion_tokens = 0
             for chunk in chat.stream(chat_messages):
@@ -166,31 +91,13 @@ async def chat(req: request):
             await asyncio.sleep(0.001)
         return ResponseStream(generate_answer, content_type='text/event-stream')
     else:
+        resp = get_chat_resp(model)
         content = chat.invoke(chat_messages).content
         completion_tokens = cal_tokens(content, 'gpt-3.5-turbo')
         resp["usage"]["prompt_tokens"]= prompt_tokens
         resp["usage"]["completion_tokens"]= completion_tokens
         resp["usage"]["total_tokens"]= completion_tokens+prompt_tokens
-        if is_function_call:
-            tool_calls = []
-            if is_valid_json_array(content):
-                tool_array = json.loads(content)
-            else:
-                match = re.search(r'\[.*\]', content)
-                if match:
-                    tool_array = json.loads(match.group(0))
-                else:
-                    raise Exception('函数调用结果格式错误，请检查')
-            for tool in tool_array:
-                tool_resp = {
-                        "id": uuid.uuid4().hex,
-                        "type": "function",
-                        "function": tool
-                    }
-                tool_calls.append(tool_resp)
-            resp["choices"][0]['message']['tool_calls'] = tool_calls
-        else:
-           resp["choices"][0]['message']['content'] = content 
+        resp["choices"][0]['message']['content'] = content 
         #print('resp:'+str(resp))
         return sanic_json(resp)
 
@@ -200,50 +107,11 @@ async def completions(req: request):
     prompt = safe_get(req, 'prompt')
     stream = safe_get(req, 'stream', False)
     model = safe_get(req, 'model')
-    temperature = safe_get(req, 'temperature', 0.1)
+    temperature = safe_get(req, 'temperature', 0.01)
     llm : LLM = getLLM(model, temperature)
-    resp = {
-            "choices": [
-                {
-                "finish_reason": "length",
-                "index": 0,
-                "logprobs": '',
-                "text": ""
-                }
-            ],
-            "created": time.time(),
-            "id": uuid.uuid4().hex,
-            "model": model,
-            "object": "text_completion",
-            "usage": {
-                "completion_tokens": 0,
-                "prompt_tokens": 0,
-                "total_tokens": 0
-            }
-        }
-    stream_resp = {
-            "choices": [
-                {
-                    "finish_reason": "",
-                    "index": 0,
-                    "logprobs": '',
-                    "delta": {
-                                "content": ""
-                            },
-                }
-            ],
-            "created":  time.time(),
-            "id": uuid.uuid4().hex,
-            "model": model,
-            "object": "text_completion",
-            "usage": {
-                "completion_tokens": 0,
-                "prompt_tokens": 0,
-                "total_tokens": 0
-            }
-        }
     prompt_tokens = cal_tokens(prompt, 'gpt-3.5-turbo')
     if stream:
+        stream_resp = get_completions_stream_resp(model)
         async def generate_answer(response:ResponseStream):
             completion_tokens = 0
             for chunk in llm.stream(prompt):
@@ -264,6 +132,7 @@ async def completions(req: request):
             await asyncio.sleep(0.001)
         return ResponseStream(generate_answer, content_type='text/event-stream')
     else:
+        resp = get_completions_resp(model)
         content = llm.invoke(prompt)
         resp["choices"][0]['text'] = content
         completion_tokens = cal_tokens(content, 'gpt-3.5-turbo')
@@ -272,35 +141,4 @@ async def completions(req: request):
         resp["usage"]["total_tokens"]= completion_tokens+prompt_tokens
         return sanic_json(resp)
     
-    
-def glm_chat(req: request):
-    from zhipuai import ZhipuAI
-    stream = safe_get(req, 'stream', False)
-    model = safe_get(req, 'model')
-    messages = safe_get(req, 'messages', [])
-    tools = safe_get(req, 'tools', [])
-    tool_choice = safe_get(req, 'tool_choice', '')
-    temperature = safe_get(req, 'temperature', 0)
-    client = ZhipuAI(api_key=get_config('llm','zhipu_key')) # 填写您自己的APIKey
-    resp = client.chat.completions.create(
-        model=model,  # 填写需要调用的模型名称
-        messages=messages,
-        tools = tools,
-        stream=stream,
-        tool_choice=tool_choice,
-        temperature=temperature)
-    if not stream:
-        return sanic_json(json.loads(resp.model_dump_json()))
-    else:
-        async def generate_answer(response:ResponseStream):
-            for chunk in resp:
-                
-                #logger.info(resp)
-                await response.write(f"data: {json.loads(chunk.model_dump_json())}\n\n")
-                # 确保流式输出不被压缩
-                await asyncio.sleep(0.001)
-            await response.write(f"data: {json.loads(chunk.model_dump_json())}\n\n")
-                # 确保流式输出不被压缩
-            await asyncio.sleep(0.001)
-        return ResponseStream(generate_answer, content_type='text/event-stream')
     
