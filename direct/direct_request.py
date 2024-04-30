@@ -73,7 +73,7 @@ def tongyi_chat(req: request):
         req['tools'] = tools
     resp = client.call(**req)
     if not stream:
-        print(resp)
+        #print(resp)
         openai_resp = get_chat_resp(model)
         openai_resp['choices'] = resp['output']['choices']
         openai_resp['choices'][0]['index'] = 0
