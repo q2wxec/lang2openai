@@ -24,6 +24,6 @@ httpx_sse==0.4.0
 
 # llm
 dashscope==1.14.1
-sensenova==1.0.6
 qianfan==0.3.7.1
 zhipuai==2.0.1.20240427
+openai==1.25.0
