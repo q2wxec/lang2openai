@@ -24,16 +24,28 @@ def glm_chat(req: request):
     model = safe_get(req, 'model')
     messages = safe_get(req, 'messages', [])
     tools = safe_get(req, 'tools', [])
-    tool_choice = safe_get(req, 'tool_choice', '')
+    functions = safe_get(req, 'functions', [])
+    if functions and not tools:
+        for function in functions:
+            tool = {
+                "type": "function",
+                "function": function
+            }
+            tools.append(tool)
+    tool_choice = safe_get(req, 'tool_choice', 'auto')
     temperature = safe_get(req, 'temperature', 0)
     client = ZhipuAI(api_key=get_config('llm','zhipu_key')) # 填写您自己的APIKey
-    resp = client.chat.completions.create(
-        model=model,  # 填写需要调用的模型名称
-        messages=messages,
-        tools = tools,
-        stream=stream,
-        tool_choice=tool_choice,
-        temperature=temperature)
+    req={
+        'model':model,  # 填写需要调用的模型名称
+        'messages':messages,
+        'stream':stream,
+        'temperature':temperature,
+    }
+    if tools:
+        req['tools'] = tools
+        req['tool_choice'] = tool_choice
+    print(req)
+    resp = client.chat.completions.create(**req)
     if not stream:
         return sanic_json(json.loads(resp.model_dump_json()))
     else:
