@@ -47,15 +47,15 @@ def glm_chat(req: request):
     print(req)
     resp = client.chat.completions.create(**req)
     if not stream:
-        return sanic_json(json.loads(resp.model_dump_json()))
+        return sanic_json(json.loads(resp.model_dump_json(exclude_none = True)))
     else:
         async def generate_answer(response:ResponseStream):
             for chunk in resp:
                 #logger.info(resp)
-                await response.write(f"data: {json.loads(chunk.model_dump_json())}\n\n")
+                await response.write(f"data: {chunk.model_dump_json(exclude_none = True)}\n\n")
                 # 确保流式输出不被压缩
                 await asyncio.sleep(0.001)
-            await response.write(f"data: {json.loads(chunk.model_dump_json())}\n\n")
+            await response.write(f"data: {chunk.model_dump_json(exclude_none = True)}\n\n")
                 # 确保流式输出不被压缩
             await asyncio.sleep(0.001)
         return ResponseStream(generate_answer, content_type='text/event-stream')
@@ -142,10 +142,10 @@ def tongyi_chat(req: request):
         async def generate_answer(response:ResponseStream):
             for chunk in resp:
                 #logger.info(resp)
-                await response.write(f"data: {json.loads(chunk.to_json(exclude_none = True))}\n\n")
+                await response.write(f"data: {chunk.to_json(exclude_none = True)}\n\n")
                 # 确保流式输出不被压缩
                 await asyncio.sleep(0.001)
-            await response.write(f"data: {json.loads(chunk.to_json(exclude_none = True))}\n\n")
+            await response.write(f"data: {chunk.to_json(exclude_none = True)}\n\n")
                 # 确保流式输出不被压缩
             await asyncio.sleep(0.001)
         return ResponseStream(generate_answer, content_type='text/event-stream')
