@@ -28,13 +28,21 @@ async def chat(req: request):
     # models = req.app.ctx.chat_models
     model = safe_get(req, 'model')
     # glm接口与openai兼容，可以直接处理返回
-    resp = pre_router(req)
-    if resp:
-        return resp
     stream = safe_get(req, 'stream', False)
     messages = safe_get(req, 'messages', [])
     tools = safe_get(req, 'tools', [])
     temperature = safe_get(req, 'temperature', 0.01)
+    functions = safe_get(req, 'functions', [])
+    if functions and not tools:
+        for function in functions:
+            tool = {
+                "type": "function",
+                "function": function
+            }
+            tools.append(tool)
+    resp = pre_router(req)
+    if resp:
+        return resp
     #print('messages:'+str(messages))
     #print('tools:'+str(tools))
     # spark-3.1最新消息必须来自用户
