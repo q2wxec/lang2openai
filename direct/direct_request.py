@@ -142,10 +142,10 @@ def tongyi_chat(req: request):
         async def generate_answer(response:ResponseStream):
             for chunk in resp:
                 #logger.info(resp)
-                await response.write(f"data: {chunk.to_json(exclude_none = True)}\n\n")
+                await response.write(f"data: {chunk.to_json(exclude_none = True, indent=None)}\n\n")
                 # 确保流式输出不被压缩
                 await asyncio.sleep(0.001)
-            await response.write(f"data: {chunk.to_json(exclude_none = True)}\n\n")
+            await response.write(f"data: {chunk.to_json(exclude_none = True, indent=None)}\n\n")
                 # 确保流式输出不被压缩
             await asyncio.sleep(0.001)
         return ResponseStream(generate_answer, content_type='text/event-stream')
