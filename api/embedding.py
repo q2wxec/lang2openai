@@ -11,9 +11,11 @@ def get_embeddings_dict()->dict:
     # if get_config('embedding','bge_embedding_path'):
     #     result["bge-large-zh-v1.5"] = HuggingFaceBgeEmbeddings(model_name=get_config('embedding','bge_embedding_path'))
     if get_config('embedding','embedding_path'):
-        embedding_path = get_config('embedding','embedding_path')
-        model = os.path.basename(embedding_path)
-        result[model] = HuggingFaceEmbeddings(model_name=embedding_path)
+        embedding_pathes = get_config('embedding','embedding_path')
+        embedding_path_list = embedding_pathes.split(',')
+        for embedding_path in embedding_path_list:
+            model = os.path.basename(embedding_path)
+            result[model] = HuggingFaceEmbeddings(model_name=embedding_path)
     return result
 async def embeddings(req: request):
     models = req.app.ctx.embedding_models
