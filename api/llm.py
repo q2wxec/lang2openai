@@ -11,7 +11,7 @@ from langchain.llms.base import LLM
 from langchain_core.messages import HumanMessage, SystemMessage,AIMessage
 # from llm.adaptor.chat2llm import Chat2LLM
 from utils.general_utils import *
-from llm.llm_loader import getLLM,getChat
+from llm.llm_loader import getLLM,getChat,modal_type_dict
 from modal.openai_api_modal import *
 from direct.direct_request import pre_router
 
@@ -27,6 +27,8 @@ def get_function_prompt(question,functions)->str:
 async def chat(req: request):
     # models = req.app.ctx.chat_models
     model = safe_get(req, 'model')
+    if not model in modal_type_dict:
+        model = "glm-4"
     # glm接口与openai兼容，可以直接处理返回
     stream = safe_get(req, 'stream', False)
     messages = safe_get(req, 'messages', [])

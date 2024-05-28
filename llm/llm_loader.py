@@ -54,8 +54,6 @@ def getLLM(model,temperature=0.1)->LLM:
             raise Exception("zhipu_key not set .Please check config.ini")
         
 def getChat(model,temperature=0.1)->BaseChatModel:
-    if not model in modal_type_dict:
-        model = "spark-3.1"
     type = modal_type_dict[model]
     if type == "qianfan":
         if get_config('llm','qf_ak'):
