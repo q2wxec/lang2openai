@@ -1,14 +1,19 @@
 from sanic.response import json as sanic_json
 from sanic import request
+import os
 
 
 from utils.general_utils import *
 
 def get_embeddings_dict()->dict:
-    from langchain.embeddings.huggingface import HuggingFaceBgeEmbeddings
+    from langchain.embeddings.huggingface import HuggingFaceEmbeddings
     result = {}
-    if get_config('embedding','bge_embedding_path'):
-        result["bge-large-zh-v1.5"] = HuggingFaceBgeEmbeddings(model_name=get_config('embedding','bge_embedding_path'))
+    # if get_config('embedding','bge_embedding_path'):
+    #     result["bge-large-zh-v1.5"] = HuggingFaceBgeEmbeddings(model_name=get_config('embedding','bge_embedding_path'))
+    if get_config('embedding','embedding_path'):
+        embedding_path = get_config('embedding','embedding_path')
+        model = os.path.basename(embedding_path)
+        result[model] = HuggingFaceEmbeddings(model_name=embedding_path)
     return result
 async def embeddings(req: request):
     models = req.app.ctx.embedding_models
