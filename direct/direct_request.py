@@ -36,7 +36,7 @@ def glm_chat(req: request):
     if tools:
         req['tools'] = tools
         req['tool_choice'] = tool_choice
-    print(req)
+    #print(req)
     resp = client.chat.completions.create(**req)
     if not stream:
         return sanic_json(json.loads(resp.model_dump_json(exclude_none = True)))
