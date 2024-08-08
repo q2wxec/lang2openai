@@ -11,11 +11,13 @@ from llm.adaptor.chat2llm import Chat2LLM
 from utils.general_utils import *
 
 modal_list={
-    "qianfan":["ERNIE-Bot-4"],
+    "qianfan":["ERNIE-Bot-4","ERNIE-Speed-128K","ERNIE-Speed-8K","ERNIE-Lite-8K"],
     "tongyi":["qwen-plus","qwen-turbo"],
     "zhipu":["glm-4"],
     "spark":["spark-1.1","spark-2.1","spark-3.1"],
+    "proxy":["gpt-3.5-turbo","gpt-4","gpt-4o","gpt-4o-2024-05-13"],
 }
+
 
 spark_dict={"spark-1.1":["general","ws://spark-api.xf-yun.com/v1.1/chat"],
             "spark-2.1":["generalv2","ws://spark-api.xf-yun.com/v2.1/chat"],

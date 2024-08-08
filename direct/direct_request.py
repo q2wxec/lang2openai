@@ -16,7 +16,14 @@ def pre_router(req: request):
             return tongyi_chat(req)
         elif type == 'zhipu':
             return glm_chat(req)
+        elif type == 'proxy':
+            return gpt_chat(req)
     return None
+
+def gpt_chat(req: request):
+    params = req.json
+    
+    return
 
 def glm_chat(req: request):
     from zhipuai import ZhipuAI
