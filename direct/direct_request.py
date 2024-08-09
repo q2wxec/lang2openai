@@ -20,10 +20,43 @@ def pre_router(req: request):
             return gpt_chat(req)
     return None
 
+import httpx
 def gpt_chat(req: request):
     params = req.json
-    
-    return
+    stream = safe_get(req, 'stream', False)
+    # 替换为您的API密钥
+    api_key = get_config('llm','proxy_key')
+    url = 'https://api.myhispreadnlp.com/v1/chat/completions'
+
+    # 请求数据
+    data = params
+
+    print('request:'+str(data))
+    # 设置请求头部
+    headers = {
+        'Authorization': f'Bearer {api_key}',
+        'Content-Type': 'application/json'
+    }
+
+    # 发送请求
+    resp = httpx.post(url, json=data, headers=headers, timeout=120.0)
+    if not stream:
+        print('resp:'+str(resp))
+        return sanic_json(resp.json())
+    else:
+        async def generate_answer(response:ResponseStream):
+            for chunk in resp.iter_text():
+                # 去除chunk开头的 data:
+                if chunk.startswith("data:"):
+                    chunk = chunk[5:]
+                #logger.info(resp)
+                await response.write(f"data: {chunk}\n\n")
+                # 确保流式输出不被压缩
+                await asyncio.sleep(0.001)
+            await response.write(f"data: {chunk}\n\n")
+                # 确保流式输出不被压缩
+            await asyncio.sleep(0.001)
+        return ResponseStream(generate_answer, content_type='text/event-stream')
 
 def glm_chat(req: request):
     from zhipuai import ZhipuAI
