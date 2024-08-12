@@ -14,8 +14,9 @@ modal_list={
     "qianfan":["ERNIE-Bot-4","ERNIE-Speed-128K","ERNIE-Speed-8K","ERNIE-Lite-8K"],
     "tongyi":["qwen-plus","qwen-turbo"],
     "zhipu":["glm-4"],
-    "spark":["spark-1.1","spark-2.1","spark-3.1"],
+    "spark":["general","generalv3","pro-128k","generalv3.5","4.0Ultra"],
     "proxy":["gpt-3.5-turbo","gpt-4","gpt-4o","gpt-4o-2024-05-13"],
+    "moonshot":["moonshot-v1-8k","moonshot-v1-32k","moonshot-v1-128k"],
 }
 
 
@@ -31,29 +32,12 @@ modal_type_dict = {item: key for key, sublist in modal_list.items() for item in 
 
 
 def getLLM(model,temperature=0.1)->LLM:
-    if not model in modal_type_dict:
-        model = "spark-3.1"
     type = modal_type_dict[model]
     if type == "qianfan":
         if get_config('llm','qf_ak'):
             return QianfanLLMEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model=model,temperature=temperature)
         else:
             raise Exception("qianfan_ak not set .Please check config.ini")
-    elif type == "spark":
-        if get_config('llm','xh_app_id'):
-            return SparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain=spark_dict[model][0],spark_api_url=spark_dict[model][1])
-        else:
-            raise Exception("spark_app_id not set .Please check config.ini")
-    elif type == "tongyi":
-        if get_config('llm','ty_api_key'):
-            return Tongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name=model,temperature=temperature)
-        else:
-            raise Exception("ty_api_key not set .Please check config.ini")
-    elif type == 'zhipu':
-        if get_config('llm','zhipu_key'):
-            return Chat2LLM(chat = ChatZhipuAI(zhipuai_api_key=get_config('llm','zhipu_key'),model_name=model,temperature=temperature))
-        else:
-            raise Exception("zhipu_key not set .Please check config.ini")
         
 def getChat(model,temperature=0.1)->BaseChatModel:
     type = modal_type_dict[model]
@@ -62,18 +46,3 @@ def getChat(model,temperature=0.1)->BaseChatModel:
             return QianfanChatEndpoint(qianfan_ak=get_config('llm','qf_ak'),qianfan_sk=get_config('llm','qf_sk'),model=model,temperature=temperature)
         else:
             raise Exception("qianfan_ak not set .Please check config.ini")
-    elif type == "spark":
-        if get_config('llm','xh_app_id'):
-            return ChatSparkLLM(spark_app_id=get_config('llm','xh_app_id'),spark_api_key=get_config('llm','xh_api_key'),spark_api_secret=get_config('llm','xh_api_secret'),spark_llm_domain=spark_dict[model][0],spark_api_url=spark_dict[model][1])
-        else:
-            raise Exception("spark_app_id not set .Please check config.ini")
-    elif type == "tongyi":
-        if get_config('llm','ty_api_key'):
-            return ChatTongyi(dashscope_api_key = get_config('llm','ty_api_key'),model_name=model,temperature=temperature)
-        else:
-            raise Exception("ty_api_key not set .Please check config.ini")
-    elif type == 'zhipu':
-        if get_config('llm','zhipu_key'):
-            return ChatZhipuAI(zhipuai_api_key=get_config('llm','zhipu_key'),model_name=model,temperature=temperature)
-        else:
-            raise Exception("zhipu_key not set .Please check config.ini")

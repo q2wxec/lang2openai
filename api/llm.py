@@ -42,7 +42,7 @@ async def chat(req: request):
                 "function": function
             }
             tools.append(tool)
-    resp = pre_router(req)
+    resp = pre_router(req,'chat')
     if resp:
         return resp
     #print('messages:'+str(messages))
@@ -139,6 +139,9 @@ async def chat(req: request):
 
 async def completions(req: request):
     # models = req.app.ctx.llm_models
+    resp = pre_router(req,'completions')
+    if resp:
+        return resp
     prompt = safe_get(req, 'prompt')
     stream = safe_get(req, 'stream', False)
     model = safe_get(req, 'model')
