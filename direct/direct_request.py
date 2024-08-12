@@ -26,7 +26,7 @@ def gpt_chat(req: request):
     stream = safe_get(req, 'stream', False)
     # 替换为您的API密钥
     api_key = get_config('llm','proxy_key')
-    url = 'https://api.myhispreadnlp.com/v1/chat/completions'
+    url = get_config('llm','proxy_url')
 
     # 请求数据
     data = params
