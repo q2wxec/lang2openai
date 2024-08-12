@@ -19,12 +19,6 @@ modal_list={
     "moonshot":["moonshot-v1-8k","moonshot-v1-32k","moonshot-v1-128k"],
 }
 
-
-spark_dict={"spark-1.1":["general","ws://spark-api.xf-yun.com/v1.1/chat"],
-            "spark-2.1":["generalv2","ws://spark-api.xf-yun.com/v2.1/chat"],
-            "spark-3.1":["generalv3","ws://spark-api.xf-yun.com/v3.1/chat"],
-            }
-
 modal_type_dict = {item: key for key, sublist in modal_list.items() for item in sublist}
 
 
