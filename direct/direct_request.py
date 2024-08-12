@@ -53,9 +53,9 @@ def gpt_chat(req: request):
                 await response.write(f"data: {chunk}\n\n")
                 # 确保流式输出不被压缩
                 await asyncio.sleep(0.001)
-            await response.write(f"data: {chunk}\n\n")
-                # 确保流式输出不被压缩
-            await asyncio.sleep(0.001)
+            # await response.write(f"data: {chunk}\n\n")
+            #     # 确保流式输出不被压缩
+            # await asyncio.sleep(0.001)
         return ResponseStream(generate_answer, content_type='text/event-stream')
 
 def glm_chat(req: request):
@@ -87,9 +87,9 @@ def glm_chat(req: request):
                 await response.write(f"data: {chunk.model_dump_json(exclude_none = True)}\n\n")
                 # 确保流式输出不被压缩
                 await asyncio.sleep(0.001)
-            await response.write(f"data: {chunk.model_dump_json(exclude_none = True)}\n\n")
-                # 确保流式输出不被压缩
-            await asyncio.sleep(0.001)
+            # await response.write(f"data: {chunk.model_dump_json(exclude_none = True)}\n\n")
+            #     # 确保流式输出不被压缩
+            # await asyncio.sleep(0.001)
         return ResponseStream(generate_answer, content_type='text/event-stream')
     
 # def tongyi_chat(req: request):
@@ -177,7 +177,7 @@ def tongyi_chat(req: request):
                 await response.write(f"data: {chunk.to_json(exclude_none = True, indent=None)}\n\n")
                 # 确保流式输出不被压缩
                 await asyncio.sleep(0.001)
-            await response.write(f"data: {chunk.to_json(exclude_none = True, indent=None)}\n\n")
-                # 确保流式输出不被压缩
-            await asyncio.sleep(0.001)
+            # await response.write(f"data: {chunk.to_json(exclude_none = True, indent=None)}\n\n")
+            #     # 确保流式输出不被压缩
+            # await asyncio.sleep(0.001)
         return ResponseStream(generate_answer, content_type='text/event-stream')
