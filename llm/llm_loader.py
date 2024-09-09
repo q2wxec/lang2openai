@@ -13,9 +13,9 @@ from utils.general_utils import *
 modal_list={
     "qianfan":["ERNIE-Bot-4","ERNIE-Speed-128K","ERNIE-Speed-8K","ERNIE-Lite-8K"],
     "tongyi":["qwen-plus","qwen-turbo"],
-    "zhipu":["glm-4"],
+    "zhipu":["glm-4","glm-4-plus"],
     "spark":["general","generalv3","pro-128k","generalv3.5","4.0Ultra"],
-    "proxy":["gpt-3.5-turbo","gpt-4","gpt-4o","gpt-4o-2024-05-13"],
+    "proxy":["gpt-3.5-turbo","gpt-4","gpt-4o","gpt-4o-2024-05-13","gpt-4o-2024-08-06"],
     "moonshot":["moonshot-v1-8k","moonshot-v1-32k","moonshot-v1-128k"],
 }
 
